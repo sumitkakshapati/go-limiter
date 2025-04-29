@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sethvargo/go-limiter"
+	"github.com/sumitkakshapati/go-limiter"
 )
 
 const (

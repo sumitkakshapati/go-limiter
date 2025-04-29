@@ -20,7 +20,7 @@ func ExampleNew() {
 	}
 	defer store.Close(ctx)
 
-	limit, remaining, reset, _, ok, err := store.Take(ctx, "my-key")
+	limit, remaining, reset, ok, err := store.Take(ctx, "my-key")
 	if err != nil {
 		log.Fatal(err)
 	}
