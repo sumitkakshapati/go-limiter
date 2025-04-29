@@ -109,10 +109,10 @@ func New(c *Config) (limiter.Store, error) {
 // Take attempts to remove a token from the named key. If the take is
 // successful, it returns true, otherwise false. It also returns the configured
 // limit, remaining tokens, and reset time.
-func (s *store) Take(ctx context.Context, key string) (uint64, uint64, uint64, bool, error) {
+func (s *store) Take(ctx context.Context, key string) (uint64, uint64, uint64, time.Duration, bool, error) {
 	// If the store is stopped, all requests are rejected.
 	if atomic.LoadUint32(&s.stopped) == 1 {
-		return 0, 0, 0, false, limiter.ErrStopped
+		return 0, 0, 0, time.Second * 0, false, limiter.ErrStopped
 	}
 
 	// Acquire a read lock first - this allows other to concurrently check limits
@@ -144,10 +144,10 @@ func (s *store) Take(ctx context.Context, key string) (uint64, uint64, uint64, b
 }
 
 // Get retrieves the information about the key, if any exists.
-func (s *store) Get(ctx context.Context, key string) (uint64, uint64, error) {
+func (s *store) Get(ctx context.Context, key string) (uint64, uint64, time.Duration, error) {
 	// If the store is stopped, all requests are rejected.
 	if atomic.LoadUint32(&s.stopped) == 1 {
-		return 0, 0, limiter.ErrStopped
+		return 0, 0, time.Second * 0, limiter.ErrStopped
 	}
 
 	// Acquire a read lock first - this allows other to concurrently check limits
@@ -159,7 +159,7 @@ func (s *store) Get(ctx context.Context, key string) (uint64, uint64, error) {
 	}
 	s.dataLock.RUnlock()
 
-	return 0, 0, nil
+	return 0, 0, time.Second * 0, nil
 }
 
 // Set configures the bucket-specific tokens and interval.
@@ -290,12 +290,13 @@ func newBucket(tokens uint64, interval time.Duration) *bucket {
 }
 
 // get returns information about the bucket.
-func (b *bucket) get() (tokens uint64, remaining uint64, retErr error) {
+func (b *bucket) get() (tokens uint64, remaining uint64, interval time.Duration, retErr error) {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 
 	tokens = b.maxTokens
 	remaining = b.availableTokens
+	interval = b.interval
 	return
 }
 
@@ -303,7 +304,7 @@ func (b *bucket) get() (tokens uint64, remaining uint64, retErr error) {
 // available and the clock has ticked forward, it recalculates the number of
 // tokens and retries. It returns the limit, remaining tokens, time until
 // refresh, and whether the take was successful.
-func (b *bucket) take() (tokens uint64, remaining uint64, reset uint64, ok bool, retErr error) {
+func (b *bucket) take() (tokens uint64, remaining uint64, reset uint64, interval time.Duration, ok bool, retErr error) {
 	// Capture the current request time, current tick, and amount of time until
 	// the bucket resets.
 	now := fasttime.Now()
@@ -336,6 +337,7 @@ func (b *bucket) take() (tokens uint64, remaining uint64, reset uint64, ok bool,
 		remaining = b.availableTokens
 	}
 
+	interval = b.interval
 	return
 }
 

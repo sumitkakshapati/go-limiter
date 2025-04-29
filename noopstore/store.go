@@ -18,13 +18,13 @@ func New() (limiter.Store, error) {
 }
 
 // Take always allows the request.
-func (s *store) Take(_ context.Context, _ string) (uint64, uint64, uint64, bool, error) {
-	return 0, 0, 0, true, nil
+func (s *store) Take(_ context.Context, _ string) (uint64, uint64, uint64, time.Duration, bool, error) {
+	return 0, 0, 0, time.Second, true, nil
 }
 
 // Get does nothing.
-func (s *store) Get(_ context.Context, _ string) (uint64, uint64, error) {
-	return 0, 0, nil
+func (s *store) Get(_ context.Context, _ string) (uint64, uint64, time.Duration, error) {
+	return 0, 0, time.Second, nil
 }
 
 // Set does nothing.

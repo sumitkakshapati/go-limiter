@@ -100,7 +100,7 @@ func (m *Middleware) Handle(next http.Handler) http.Handler {
 		}
 
 		// Take from the store.
-		limit, remaining, reset, ok, err := m.store.Take(ctx, key)
+		limit, remaining, reset, _, ok, err := m.store.Take(ctx, key)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
